@@ -1,7 +1,8 @@
 package com.bluedigi.bluememo.identity.infrastructure.web.response;
 
-public record RegisterUserResponse(
+public record UpdateUserResponse(
     String name,
-    String id
+    String email,
+    String phone
 ) {
 }

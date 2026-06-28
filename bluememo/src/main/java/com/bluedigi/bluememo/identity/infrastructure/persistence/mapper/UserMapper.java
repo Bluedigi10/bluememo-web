@@ -2,11 +2,31 @@ package com.bluedigi.bluememo.identity.infrastructure.persistence.mapper;
 
 import java.util.Objects;
 
+import org.springframework.stereotype.Component;
+
 import com.bluedigi.bluememo.identity.domain.model.User;
 import com.bluedigi.bluememo.identity.infrastructure.persistence.entity.UserEntity;
+import com.bluedigi.bluememo.identity.infrastructure.web.request.RegisterUserRequest;
+import com.bluedigi.bluememo.identity.infrastructure.web.response.RegisterUserResponse;
 
+@Component
 public class UserMapper {
-    public UserEntity toUserEntity(User user) {
+
+    public User registerUserRequestToUser(RegisterUserRequest request) {
+        Objects.requireNonNull(request, "RegisterUserRequest cannot be null");
+        User user = new User();
+        user.setName(request.name());
+        user.setEmail(request.email());
+        user.setPassword(request.password());
+        return user;
+    }
+
+    public RegisterUserResponse userToRegisterUserResponse(User user) {
+        Objects.requireNonNull(user, "User cannot be null");
+        return new RegisterUserResponse(user.getName(), user.getId().toString());
+    }
+    
+    public UserEntity userToUserEntity(User user) {
         Objects.requireNonNull(user, "User cannot be null");
         UserEntity entity = new UserEntity();
         entity.setId(user.getId());
@@ -20,7 +40,7 @@ public class UserMapper {
         return entity;
     }
 
-    public User toUser(UserEntity entity) {
+    public User userEntityToUser(UserEntity entity) {
         Objects.requireNonNull(entity, "UserEntity cannot be null");
         User user = new User();
         user.setId(entity.getId());
