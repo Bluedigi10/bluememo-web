@@ -35,8 +35,6 @@ public class UserMapper {
         entity.setPhone(user.getPhone());
         entity.setPassword(user.getPassword());
         entity.setBirthday(user.getBirthday());
-        entity.setCreatedAt(user.getCreatedAt());
-        entity.setUpdatedAt(user.getUpdatedAt());
         return entity;
     }
 
@@ -49,8 +47,6 @@ public class UserMapper {
         user.setPhone(entity.getPhone());
         user.setPassword(entity.getPassword());
         user.setBirthday(entity.getBirthday());
-        user.setCreatedAt(entity.getCreatedAt());
-        user.setUpdatedAt(entity.getUpdatedAt());
         return user;
     }
 }

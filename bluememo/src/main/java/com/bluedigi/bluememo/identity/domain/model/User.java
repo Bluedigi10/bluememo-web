@@ -12,6 +12,4 @@ public class User {
     private String phone;
     private String password;
     private String birthday;
-    private String createdAt;
-    private String updatedAt;
 }

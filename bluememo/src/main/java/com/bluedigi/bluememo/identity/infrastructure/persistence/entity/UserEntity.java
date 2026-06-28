@@ -1,6 +1,10 @@
 package com.bluedigi.bluememo.identity.infrastructure.persistence.entity;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -30,6 +34,8 @@ public class UserEntity {
     @Column(nullable = false)
     private String password;
     private String birthday;
-    private String createdAt;
-    private String updatedAt;
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 }
