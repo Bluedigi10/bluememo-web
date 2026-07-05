@@ -2,5 +2,8 @@
 .vscode/
 *.code-workspace
 
+# IntelliJ IDEA
+.idea/
+
 # Local agent configuration
 .agents/
