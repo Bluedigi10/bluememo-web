@@ -2,14 +2,16 @@ package com.bluedigi.bluememo.identity.infrastructure.web.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public record RegisterUserRequest(
-    @NotBlank
+    @NotBlank(message = "Name is required")
     String name,
-    @Email
-    @NotBlank
+    @Email(message = "Email is invalid")
+    @NotBlank(message = "Email is required")
     String email,
-    @NotBlank
+    @NotBlank(message = "Password is required")
+    @Size(min = 8, message = "Password must be at least 8 characters long")
     String password
 ) {
 }

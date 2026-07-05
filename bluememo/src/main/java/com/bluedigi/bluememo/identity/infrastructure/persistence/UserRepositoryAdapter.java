@@ -29,9 +29,17 @@ public class UserRepositoryAdapter implements UserRepository {
 
     @Override
     public Optional<User> findById(UUID id) {
-        // Use userJpaRepository to find UserEntity by id
-        // Convert UserEntity to User and return as Optional
-        return Optional.empty(); // Placeholder for actual implementation
+        return repository.findById(id).map(mapper::userEntityToUser);
+    }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return repository.findByEmail(email).map(mapper::userEntityToUser);
+    }
+
+    @Override
+    public boolean existsByEmail(String email) {
+        return repository.existsByEmail(email);
     }
     
 }
