@@ -3,7 +3,6 @@ package com.bluedigi.bluememo.identity.infrastructure.web;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.bluedigi.bluememo.identity.application.service.AuthService;
 import com.bluedigi.bluememo.identity.infrastructure.web.request.UpdateUserRequest;
 import com.bluedigi.bluememo.identity.infrastructure.web.response.GetUserResponse;
 import com.bluedigi.bluememo.identity.infrastructure.web.response.UpdateUserResponse;

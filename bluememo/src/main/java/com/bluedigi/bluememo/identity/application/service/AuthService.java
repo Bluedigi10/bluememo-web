@@ -1,6 +1,7 @@
 package com.bluedigi.bluememo.identity.application.service;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -17,11 +18,13 @@ public class AuthService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final JwtService jwtService;
+    private final PasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository, UserMapper userMapper, JwtService jwtService) {
+    public AuthService(UserRepository userRepository, UserMapper userMapper, JwtService jwtService, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.jwtService = jwtService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public AuthResponse registerUser(RegisterUserRequest request) {
@@ -35,7 +38,12 @@ public class AuthService {
     }
     
     public AuthResponse loginUser(LoginUserRequest loginUserRequest) {
-        //TODO: Implement login logic
-        return null;
+        User user = userRepository.findByEmail(loginUserRequest.email())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
+
+        if (!passwordEncoder.matches(loginUserRequest.password(), user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+        }
+        return new AuthResponse(jwtService.generateToken(user));
     }
 }
