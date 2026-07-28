@@ -1,19 +1,90 @@
 package com.bluedigi.bluememo.identity.application.service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
-import com.bluedigi.bluememo.identity.infrastructure.web.response.GetUserResponse;
+import com.bluedigi.bluememo.identity.domain.model.User;
+import com.bluedigi.bluememo.identity.domain.repository.UserRepository;
+import com.bluedigi.bluememo.identity.infrastructure.persistence.mapper.UserMapper;
+import com.bluedigi.bluememo.identity.infrastructure.web.request.UpdateUserRequest;
+import com.bluedigi.bluememo.identity.infrastructure.web.response.UserResponse;
 
 @Service
 public class UserService {
-    public List<GetUserResponse> getUsers() {
-        return new ArrayList<>();
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+
+    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    public GetUserResponse getUserById(String id) {
-        return new GetUserResponse("prueba", new String(), new String(), new String(), new String(), new String());
+    @Transactional(readOnly = true)
+    public UserResponse getUserById(String userId) {
+        User user = userRepository.findById(UUID.fromString(userId))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        
+        return userMapper.userToUserResponse(user);
+    }
+
+    @Transactional
+    public UserResponse updateUser(String userId, UpdateUserRequest request) {
+        User user = userRepository.findById(UUID.fromString(userId))
+                .orElseThrow(
+                    () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
+                );
+        
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+        }
+
+        if (request.name() != null) {
+            user.setName(request.name());
+        }
+
+        if (request.email() != null
+                && !request.email().equalsIgnoreCase(user.getEmail())
+                && userRepository.existsByEmail(request.email())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Email already exists"
+            );
+        }
+
+        if (request.phone() != null
+                && !request.phone().equalsIgnoreCase(user.getPhone())
+                && userRepository.existsByPhone(request.phone())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Phone already exists"
+            );
+        }
+
+        if (request.email() != null) {
+            user.setEmail(request.email());
+        }
+
+        if (request.phone() != null) {
+            user.setPhone(request.phone());
+        }
+
+        if (request.birthdate() != null) {
+            user.setBirthdate(request.birthdate());
+        }
+
+        if (request.newPassword() != null) {
+            user.setPassword(passwordEncoder.encode(request.newPassword()));
+        }
+
+        User updatedUser = userRepository.update(user);
+
+        return userMapper.userToUserResponse(updatedUser);
     }
 }

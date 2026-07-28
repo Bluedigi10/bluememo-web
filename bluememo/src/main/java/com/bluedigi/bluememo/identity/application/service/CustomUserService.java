@@ -1,5 +1,7 @@
 package com.bluedigi.bluememo.identity.application.service;
 
+import java.util.UUID;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
@@ -15,11 +17,11 @@ public class CustomUserService implements UserDetailsService {
         this.userRepository = userRepository;
     }
 
-    public UserDetails loadUserByUsername(String email) {
-        User user = userRepository.findByEmail(email)
+    public UserDetails loadUserByUsername(String userId) {
+        User user = userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getEmail())
+                .username(user.getId().toString())
                 .password(user.getPassword())
                 .roles("USER")
                 .build();

@@ -16,6 +16,18 @@ import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleUnexpectedException(
+            Exception exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                exception.getMessage(),
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                request.getRequestURI()
+        );
+    }
     
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(
@@ -55,7 +67,7 @@ public class GlobalExceptionHandler {
         if (authException instanceof BadCredentialsException && authException.getMessage() != null) {
             errorMessage = authException.getMessage();
         } else {
-            errorMessage = "It needs a valid token to access this resource";
+            errorMessage = "You need a valid token to access this resource";
         }
 
         return buildResponse(

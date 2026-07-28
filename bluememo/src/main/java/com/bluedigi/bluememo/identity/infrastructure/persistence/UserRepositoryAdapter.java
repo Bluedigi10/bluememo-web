@@ -3,7 +3,9 @@ package com.bluedigi.bluememo.identity.infrastructure.persistence;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.bluedigi.bluememo.identity.domain.model.User;
 import com.bluedigi.bluememo.identity.domain.repository.UserRepository;
@@ -41,5 +43,27 @@ public class UserRepositoryAdapter implements UserRepository {
     public boolean existsByEmail(String email) {
         return repository.existsByEmail(email);
     }
-    
+
+    @Override
+    public boolean existsByPhone(String phone) {
+        return repository.existsByPhone(phone);
+    }
+
+    @Override
+    public User update(User user) {
+        UserEntity existingEntity = repository.findById(user.getId())
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "User not found"
+                        )
+                );
+            
+        mapper.updateUserEntity(user, existingEntity);
+            
+        UserEntity updatedEntity =
+                repository.saveAndFlush(existingEntity);
+            
+        return mapper.userEntityToUser(updatedEntity);
+    }  
 }

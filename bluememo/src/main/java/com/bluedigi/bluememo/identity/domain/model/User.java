@@ -1,5 +1,7 @@
 package com.bluedigi.bluememo.identity.domain.model;
 
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.UUID;
 
 import lombok.Data;
@@ -11,5 +13,7 @@ public class User {
     private String email;
     private String phone;
     private String password;
-    private String birthday;
+    private LocalDate birthdate;
+    private Date createdAt;
+    private Date updatedAt;
 }

@@ -1,5 +1,6 @@
 package com.bluedigi.bluememo.identity.infrastructure.persistence.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -33,7 +34,7 @@ public class UserEntity {
     private String phone;
     @Column(nullable = false)
     private String password;
-    private String birthday;
+    private LocalDate birthdate;
     @CreationTimestamp
     private LocalDateTime createdAt;
     @UpdateTimestamp

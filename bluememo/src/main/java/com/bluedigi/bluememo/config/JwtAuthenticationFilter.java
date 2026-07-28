@@ -2,6 +2,8 @@ package com.bluedigi.bluememo.config;
 
 import java.io.IOException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,6 +24,8 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter  {
 
+    private final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
     private final JwtService jwtService;
     private final CustomUserService userService;
     private final SecurityErrorHandler securityErrorHandler;
@@ -30,6 +34,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter  {
         this.jwtService = jwtService;
         this.userService = userService;
         this.securityErrorHandler = securityErrorHandler;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        logger.debug("Checking if request should be filtered: {}", request.getServletPath());
+        return request.getServletPath().startsWith("/auth/");
     }
 
     @Override
@@ -46,13 +56,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter  {
         }
 
         String token = authorizationHeader.substring(7);
-        String email;
+        String userId;
 
         try {
-            email = jwtService.getSubject(token);
+            userId = jwtService.getSubject(token);
 
-            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails user = userService.loadUserByUsername(email);
+            if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails user = userService.loadUserByUsername(userId);
 
                 if (!jwtService.isTokenValid(token, user)) {
                     securityErrorHandler.commence(
@@ -75,6 +85,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter  {
             }
         } catch (Exception exception) {
             SecurityContextHolder.clearContext();
+
             securityErrorHandler.commence(
                 request, 
                 response, 

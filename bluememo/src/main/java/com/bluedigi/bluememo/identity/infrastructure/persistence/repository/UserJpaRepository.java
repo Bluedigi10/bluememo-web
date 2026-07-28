@@ -10,4 +10,5 @@ import com.bluedigi.bluememo.identity.infrastructure.persistence.entity.UserEnti
 public interface UserJpaRepository extends JpaRepository<UserEntity, UUID> {
     Optional<UserEntity> findByEmail(String email);
     boolean existsByEmail(String email);
+    boolean existsByPhone(String phone);
 }

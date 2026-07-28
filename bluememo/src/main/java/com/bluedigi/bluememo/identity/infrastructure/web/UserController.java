@@ -3,21 +3,21 @@ package com.bluedigi.bluememo.identity.infrastructure.web;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bluedigi.bluememo.identity.application.service.UserService;
 import com.bluedigi.bluememo.identity.infrastructure.web.request.UpdateUserRequest;
-import com.bluedigi.bluememo.identity.infrastructure.web.response.GetUserResponse;
-import com.bluedigi.bluememo.identity.infrastructure.web.response.UpdateUserResponse;
+import com.bluedigi.bluememo.identity.infrastructure.web.response.UserResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 
-import java.util.List;
-import java.util.UUID;
-
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 
@@ -25,32 +25,35 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RestController
 @RequestMapping("/users")
 public class UserController {
-    
-    @GetMapping
-    public List<GetUserResponse> getUsers() {
-        //TODO: process GET request with param
-        return List.of(new GetUserResponse(new String(), new String(), new String(), new String(), new String(), new String()));
+
+    private final UserService userService;
+
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
-    @Operation(summary = "Get user details by ID")
+    @Operation(summary = "Get user details")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "details get "),
-            @ApiResponse(responseCode = "403", description = "not authorized to access this resource")
+            @ApiResponse(responseCode = "404", description = "resource not found")
     })
-    @GetMapping("/{id}")
-    public GetUserResponse getUser(@PathVariable UUID id) {
-        return new GetUserResponse(new String(), new String(), new String(), new String(), new String(), new String());
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> getCurrentUser(@AuthenticationPrincipal UserDetails loggedUser) {
+        return ResponseEntity.ok(
+            userService.getUserById(loggedUser.getUsername())
+        );
     }
 
-    @PutMapping("/{id}")
-    public UpdateUserResponse updateUser(@PathVariable UUID id, @RequestBody UpdateUserRequest entity) {
-        //TODO: process PUT request
-        return new UpdateUserResponse(entity.name(), entity.email(), entity.phone());
+    @PatchMapping("/me")
+    public ResponseEntity<UserResponse> updateUser(@AuthenticationPrincipal UserDetails loggedUser, @Valid @RequestBody UpdateUserRequest entity) {
+        return ResponseEntity.ok(
+            userService.updateUser(loggedUser.getUsername(), entity)
+        );
     }
 
-    @DeleteMapping("/{id}")
-    public String deleteUser(@PathVariable UUID id) {
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal UserDetails loggedUser) {
         //TODO: process DELETE request
-        return new String();
+        return ResponseEntity.noContent().build();
     }
 }
