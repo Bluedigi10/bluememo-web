@@ -7,6 +7,10 @@ import com.bluedigi.bluememo.identity.infrastructure.web.request.UpdateUserReque
 import com.bluedigi.bluememo.identity.infrastructure.web.response.GetUserResponse;
 import com.bluedigi.bluememo.identity.infrastructure.web.response.UpdateUserResponse;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -28,6 +32,11 @@ public class UserController {
         return List.of(new GetUserResponse(new String(), new String(), new String(), new String(), new String(), new String()));
     }
 
+    @Operation(summary = "Get user details by ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "details get "),
+            @ApiResponse(responseCode = "403", description = "not authorized to access this resource")
+    })
     @GetMapping("/{id}")
     public GetUserResponse getUser(@PathVariable UUID id) {
         return new GetUserResponse(new String(), new String(), new String(), new String(), new String(), new String());

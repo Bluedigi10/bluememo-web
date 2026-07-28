@@ -32,7 +32,10 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already exists");
         }
 
-        User savedUser = userRepository.save(userMapper.registerUserRequestToUser(request));
+        User user = userMapper.registerUserRequestToUser(request);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        User savedUser = userRepository.save(user);
     
         return new AuthResponse(jwtService.generateToken(savedUser));
     }

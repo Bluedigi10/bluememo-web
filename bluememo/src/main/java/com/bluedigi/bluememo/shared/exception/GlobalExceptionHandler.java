@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -13,6 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(
         MethodArgumentNotValidException ex,
@@ -37,6 +41,38 @@ public class GlobalExceptionHandler {
         return buildResponse(
                 exception.getReason(),
                 status,
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(
+            AuthenticationException authException,
+            HttpServletRequest request
+    ) {
+        String errorMessage;
+
+        if (authException instanceof BadCredentialsException && authException.getMessage() != null) {
+            errorMessage = authException.getMessage();
+        } else {
+            errorMessage = "It needs a valid token to access this resource";
+        }
+
+        return buildResponse(
+                errorMessage,
+                HttpStatus.UNAUTHORIZED,
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+            AccessDeniedException accessDeniedException,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                "You don't have permission to access this resource",
+                HttpStatus.FORBIDDEN,
                 request.getRequestURI()
         );
     }

@@ -2,7 +2,6 @@ package com.bluedigi.bluememo.identity.infrastructure.persistence.mapper;
 
 import java.util.Objects;
 
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import com.bluedigi.bluememo.identity.domain.model.User;
@@ -12,18 +11,12 @@ import com.bluedigi.bluememo.identity.infrastructure.web.request.RegisterUserReq
 @Component
 public class UserMapper {
 
-    private final PasswordEncoder passwordEncoder;
-
-    public UserMapper(PasswordEncoder passwordEncoder) {
-        this.passwordEncoder = passwordEncoder;
-    }
-
     public User registerUserRequestToUser(RegisterUserRequest request) {
         Objects.requireNonNull(request, "RegisterUserRequest cannot be null");
         User user = new User();
         user.setName(request.name());
         user.setEmail(request.email());
-        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setPassword(request.password());
         return user;
     }
     
