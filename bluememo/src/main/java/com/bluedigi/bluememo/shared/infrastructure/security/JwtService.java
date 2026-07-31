@@ -1,4 +1,4 @@
-package com.bluedigi.bluememo.identity.infrastructure.security;
+package com.bluedigi.bluememo.shared.infrastructure.security;
 
 import java.util.Date;
 
@@ -31,8 +31,8 @@ public class JwtService {
 
         return Jwts.builder()
                 .subject(user.getId().toString())
-                .claim("userId", user.getId().toString())
                 .claim("name", user.getName())
+                .claim("email", user.getEmail())
                 .issuedAt(now)
                 .expiration(expiration)
                 .signWith(getSigningKey())

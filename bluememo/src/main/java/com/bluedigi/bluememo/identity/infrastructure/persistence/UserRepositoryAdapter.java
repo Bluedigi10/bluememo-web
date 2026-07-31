@@ -38,6 +38,11 @@ public class UserRepositoryAdapter implements UserRepository {
     public Optional<User> findByEmail(String email) {
         return repository.findByEmail(email).map(mapper::userEntityToUser);
     }
+    
+    @Override
+    public boolean existsById(UUID id) {
+        return repository.existsById(id);
+    }
 
     @Override
     public boolean existsByEmail(String email) {
