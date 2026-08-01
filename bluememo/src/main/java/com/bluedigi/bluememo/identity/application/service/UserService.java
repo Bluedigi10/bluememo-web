@@ -12,16 +12,20 @@ import com.bluedigi.bluememo.identity.domain.model.User;
 import com.bluedigi.bluememo.identity.domain.repository.UserRepository;
 import com.bluedigi.bluememo.identity.infrastructure.persistence.mapper.UserMapper;
 import com.bluedigi.bluememo.identity.infrastructure.web.request.UpdateUserRequest;
+import com.bluedigi.bluememo.identity.infrastructure.web.request.DeleteUserRequest;
 import com.bluedigi.bluememo.identity.infrastructure.web.response.UserResponse;
+import com.bluedigi.bluememo.todo.domain.repository.TodoRepository;
 
 @Service
 public class UserService {
     private final UserRepository userRepository;
+    private final TodoRepository todoRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, TodoRepository todoRepository, UserMapper userMapper, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.todoRepository = todoRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
     }
@@ -32,6 +36,19 @@ public class UserService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         
         return userMapper.userToUserResponse(user);
+    }
+
+    @Transactional
+    public void deleteUserById(String userId, DeleteUserRequest deleteUserRequest) {
+        User user = userRepository.findById(UUID.fromString(userId))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        
+        if (!passwordEncoder.matches(deleteUserRequest.password(), user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid password");
+        }
+
+        todoRepository.deleteTodosByUserId(UUID.fromString(userId));
+        userRepository.deleteById(UUID.fromString(userId));
     }
 
     @Transactional

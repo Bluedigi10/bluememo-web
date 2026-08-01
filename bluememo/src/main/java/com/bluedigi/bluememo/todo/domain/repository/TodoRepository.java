@@ -12,6 +12,7 @@ public interface TodoRepository {
     Todo saveTodo(Todo request, UUID userId);
     Todo updateTodo(Todo request);
     void deleteTodo(UUID todoId);
+    void deleteTodosByUserId(UUID userId);
     boolean existByUserIdAndTitle(UUID userId, String title);
     boolean existByUserIdAndTodoId(UUID userId, UUID todoId);
     boolean existByUserIdAndTitleAndTodoIdNot(UUID userId, String title, UUID todoId);

@@ -70,6 +70,11 @@ public class TodoRepositoryAdapter implements TodoRepository{
         todoJpaRepository.deleteById(todoId);
     }
 
+        @Override
+    public void deleteTodosByUserId(UUID userId) {
+        todoJpaRepository.deleteAllByUser_Id(userId);
+    }
+
     @Override
     public boolean existByUserIdAndTitle(UUID userId, String title) {
         return todoJpaRepository.existsByUser_IdAndTitle(userId, title);
@@ -103,5 +108,5 @@ public class TodoRepositoryAdapter implements TodoRepository{
         return todoJpaRepository
                 .findAllByUser_IdAndStatus(userId, todoStatus, pageable)
                 .map(todoMapper::todoEntityToTodo);
-            }
+    }
 }

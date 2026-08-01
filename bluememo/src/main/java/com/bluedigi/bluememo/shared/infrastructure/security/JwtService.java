@@ -45,14 +45,10 @@ public class JwtService {
 
     public boolean isTokenValid(String token, UserDetails user) {
         try {
-            return getSubject(token).equals(user.getUsername()) && !isTokenExpired(token);
+            return getSubject(token).equals(user.getUsername());
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
-    }
-
-    private boolean isTokenExpired(String token){
-        return extractAllClaims(token).getExpiration().before(new Date());
     }
     
     private Claims extractAllClaims(String token) {

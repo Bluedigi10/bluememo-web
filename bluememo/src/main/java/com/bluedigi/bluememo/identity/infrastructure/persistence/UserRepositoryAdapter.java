@@ -30,6 +30,11 @@ public class UserRepositoryAdapter implements UserRepository {
     }
 
     @Override
+    public void deleteById(UUID id) {
+        repository.deleteById(id);
+    }
+
+    @Override
     public Optional<User> findById(UUID id) {
         return repository.findById(id).map(mapper::userEntityToUser);
     }

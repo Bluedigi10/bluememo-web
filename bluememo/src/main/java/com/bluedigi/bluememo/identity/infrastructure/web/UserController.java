@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.bluedigi.bluememo.identity.application.service.UserService;
 import com.bluedigi.bluememo.identity.infrastructure.web.request.UpdateUserRequest;
+import com.bluedigi.bluememo.identity.infrastructure.web.request.DeleteUserRequest;
 import com.bluedigi.bluememo.identity.infrastructure.web.response.UserResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,8 +53,8 @@ public class UserController {
     }
 
     @DeleteMapping("/me")
-    public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal UserDetails loggedUser) {
-        //TODO: process DELETE request
+    public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal UserDetails loggedUser, @Valid @RequestBody DeleteUserRequest deleteUserRequest) {
+        userService.deleteUserById(loggedUser.getUsername(), deleteUserRequest);
         return ResponseEntity.noContent().build();
     }
 }
