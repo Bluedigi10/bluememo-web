@@ -72,7 +72,7 @@ public class TodoRepositoryAdapter implements TodoRepository{
 
         @Override
     public void deleteTodosByUserId(UUID userId) {
-        todoJpaRepository.deleteAllByUser_Id(userId);
+        todoJpaRepository.deleteAllByUserId(userId);
     }
 
     @Override

@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import com.bluedigi.bluememo.todo.domain.model.TodoStatus;
 import com.bluedigi.bluememo.todo.infrastructure.persistance.entity.TodoEntity;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface TodoJpaRepository extends JpaRepository<TodoEntity, UUID> {
     boolean existsByUser_IdAndTitle(UUID userId, String title);
@@ -22,5 +23,5 @@ public interface TodoJpaRepository extends JpaRepository<TodoEntity, UUID> {
         flushAutomatically = true
     )
     @Query("DELETE FROM TodoEntity t WHERE t.user.id = :userId")
-    void deleteAllByUser_Id(UUID userId);
+    void deleteAllByUserId(@Param("userId") UUID userId);
 }
