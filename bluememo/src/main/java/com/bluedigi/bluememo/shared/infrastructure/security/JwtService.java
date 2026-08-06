@@ -4,10 +4,10 @@ import java.util.Date;
 
 import javax.crypto.SecretKey;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import com.bluedigi.bluememo.config.JwtProperties;
 import com.bluedigi.bluememo.identity.domain.model.User;
 
 import io.jsonwebtoken.Claims;
@@ -19,15 +19,15 @@ import io.jsonwebtoken.security.Keys;
 @Service
 public class JwtService {
 
-    @Value("${bluememo.jwt.secret}")
-    private String jwtSecret;
+    private final JwtProperties jwtProperties;
 
-    @Value("${bluememo.jwt.expiration-ms}")
-    private Long jwtExpirationMs;
+    public JwtService(JwtProperties jwtProperties) {
+        this.jwtProperties = jwtProperties;
+    }
 
     public String generateToken(User user) {
         Date now = new Date();
-        Date expiration = new Date(now.getTime() + jwtExpirationMs);
+        Date expiration = new Date(now.getTime() + jwtProperties.expirationMs());
 
         return Jwts.builder()
                 .subject(user.getId().toString())
@@ -60,7 +60,7 @@ public class JwtService {
     }
 
     private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.secret());
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }

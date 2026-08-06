@@ -14,8 +14,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
+import com.bluedigi.bluememo.config.JwtProperties;
 import com.bluedigi.bluememo.identity.domain.model.User;
 
 import io.jsonwebtoken.Claims;
@@ -35,19 +35,11 @@ public class JwtServiceTest {
 
     @BeforeEach
     void setUp() {
-        jwtService = new JwtService();
-
-        ReflectionTestUtils.setField(
-                jwtService,
-                "jwtSecret",
-                JWT_SECRET
-        );
-
-        ReflectionTestUtils.setField(
-                jwtService,
-                "jwtExpirationMs",
+        JwtProperties jwtProperties = new JwtProperties(
+                JWT_SECRET,
                 JWT_EXPIRATION_MS
         );
+        jwtService = new JwtService(jwtProperties);
     }
 
     @Test
@@ -198,19 +190,20 @@ public class JwtServiceTest {
                 .roles("USER")
                 .build();
         // Set expiration to 1 second for testing
-        ReflectionTestUtils.setField(
-                jwtService,
-                "jwtExpirationMs",
-                1L
+        JwtProperties expiredProperties = new JwtProperties(
+            JWT_SECRET,
+            1L
         );
-        String token = jwtService.generateToken(savedUser);
+
+        JwtService expiredJwtService = new JwtService(expiredProperties);
+        String token = expiredJwtService.generateToken(savedUser);
         // Wait for the token to expire
         try {
                 Thread.sleep(15L);
         } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
         }
-        boolean isValid = jwtService.isTokenValid(token, userDetails);
+        boolean isValid = expiredJwtService.isTokenValid(token, userDetails);
         assertFalse(isValid);
     }
 
