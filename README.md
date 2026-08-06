@@ -7,15 +7,16 @@ BlueMemo is a REST API for personal task management. It provides user registrati
 - User registration and login
 - Password hashing with BCrypt
 - Stateless authentication with JSON Web Tokens (JWT)
-- Authenticated profile lookup, update, and deletion
+- Authenticated profile lookup, partial update, and deletion
 - Create, read, update, filter, sort, and delete to-do items
 - Ownership validation so users can access only their own items
 - Pagination and status filtering
 - Centralized validation and error responses
 - OpenAPI documentation with Swagger UI
-- Health and metrics endpoints with Spring Boot Actuator
-- Unit tests and JaCoCo coverage reports
+- Health endpoint with Spring Boot Actuator
+- Automated tests and JaCoCo coverage reports
 - Dockerized API and PostgreSQL database
+- Environment-specific Spring profiles
 
 ## Tech stack
 
@@ -26,9 +27,9 @@ BlueMemo is a REST API for personal task management. It provides user registrati
 - Spring Data JPA / Hibernate
 - PostgreSQL 17
 - JJWT 0.13.0
-- Springdoc OpenAPI
+- Springdoc OpenAPI 3.0.3
 - Maven Wrapper
-- JUnit, Mockito, and JaCoCo
+- JUnit, Mockito, H2, and JaCoCo
 - Docker and Docker Compose
 
 ## Project structure
@@ -38,7 +39,7 @@ bluememo-web/
 ├── README.md
 └── bluememo/
     ├── src/main/java/com/bluedigi/bluememo/
-    │   ├── config/                 # Security, JWT filter, and OpenAPI configuration
+    │   ├── config/                 # Security, JWT filter, and OpenAPI
     │   ├── identity/
     │   │   ├── application/        # Authentication and user use cases
     │   │   ├── domain/             # User model and repository contract
@@ -48,7 +49,8 @@ bluememo-web/
     │   │   ├── domain/             # To-do model, enums, and repository contract
     │   │   └── infrastructure/     # REST and persistence adapters
     │   └── shared/                 # JWT service and exception handling
-    ├── src/test/                   # Unit and context tests
+    ├── src/main/resources/         # Shared and profile-specific properties
+    ├── src/test/                   # Unit and application context tests
     ├── compose.yaml
     ├── Dockerfile
     └── pom.xml
@@ -60,47 +62,76 @@ For the recommended Docker setup:
 
 - Docker Desktop or Docker Engine with Docker Compose
 
-For local development without Docker:
+For local execution without Docker:
 
 - JDK 17
-- A running PostgreSQL instance
+- PostgreSQL
 
-The project includes Maven Wrapper, so a separate Maven installation is not required.
+The Maven Wrapper is included, so a separate Maven installation is not required.
 
 ## Environment variables
 
-Create `bluememo/.env` with the following values:
+### Required by the application
 
-```dotenv
-POSTGRES_DB=bluememo
-POSTGRES_USER=bluememo_user
-POSTGRES_PASSWORD=replace_with_a_strong_password
-JWT_SECRET=replace_with_a_base64_encoded_secret
-```
+| Variable | Required | Default | Description |
+| --- | --- | --- | --- |
+| `JWT_SECRET` | Yes | None | Base64-encoded secret used to sign JWTs |
+| `JWT_EXPIRATION_MS` | No | `900000` | Token lifetime in milliseconds |
+| `SERVER_PORT` | No | `8080` | Application port |
+| `SPRING_DATASOURCE_URL` | Depends on profile | Local profile has a default | PostgreSQL JDBC URL |
+| `SPRING_DATASOURCE_USERNAME` | Depends on profile | Local profile has a default | Database username |
+| `SPRING_DATASOURCE_PASSWORD` | Depends on profile | Local profile has a default | Database password |
+| `DB_MAX_POOL_SIZE` | No | `10` | Maximum Hikari pool size in production |
+| `DB_MIN_IDLE` | No | `2` | Minimum idle connections in production |
 
-`JWT_SECRET` must be a Base64-encoded key with at least 32 random bytes. It can be generated with:
+`JWT_SECRET` must decode to a key of at least 32 bytes. Generate one with:
 
 ```bash
 openssl rand -base64 32
 ```
 
-Do not commit the real `.env` file or use these example credentials in production.
+### Required by Docker Compose
+
+Create `bluememo/.env`:
+
+```dotenv
+POSTGRES_DB=bluememo_db
+POSTGRES_USER=app_user
+POSTGRES_PASSWORD=replace_with_a_strong_password
+JWT_SECRET=replace_with_a_base64_encoded_secret
+```
+
+The `.env` file is ignored by Git and excluded from the Docker build context. Do not commit real credentials or secrets.
+
+## Spring profiles
+
+| Profile | Database | Schema strategy | Intended use |
+| --- | --- | --- | --- |
+| `local` | PostgreSQL with local defaults or environment overrides | `update` | Local development and Docker Compose |
+| `dev` | PostgreSQL configured through environment variables | `update` | Shared development environment |
+| `qa` | PostgreSQL configured through environment variables | `validate` | Quality assurance |
+| `prod` | PostgreSQL configured through environment variables | `validate` | Production |
+| `test` | In-memory H2 in PostgreSQL compatibility mode | `create-drop` | Automated tests |
+
+No profile is selected in `application.properties`; select one when starting the application. Docker Compose selects `local` automatically.
+
+The `qa` and `prod` profiles validate an existing schema and do not create tables. Their databases must already contain a schema compatible with the JPA entities.
 
 ## Run with Docker Compose
 
-From the project root:
+From the repository root:
 
 ```bash
 cd bluememo
 docker compose up --build -d
 ```
 
-The services will be available at:
+Services:
 
 - API: `http://localhost:8000`
 - Swagger UI: `http://localhost:8000/swagger-ui.html`
 - OpenAPI JSON: `http://localhost:8000/v3/api-docs`
-- Health check: `http://localhost:8000/actuator/health`
+- Health: `http://localhost:8000/actuator/health`
 
 Useful commands:
 
@@ -117,33 +148,37 @@ docker compose down -v
 
 ## Run locally
 
-Start PostgreSQL first and export the required environment variables. Because `application.properties` uses the Docker hostname by default, override the datasource URL with `localhost` when the API runs directly on the host.
-
-### Linux or macOS
-
-```bash
-cd bluememo
-export POSTGRES_DB=bluememo
-export POSTGRES_USER=bluememo_user
-export POSTGRES_PASSWORD=replace_with_a_strong_password
-export JWT_SECRET=replace_with_a_base64_encoded_secret
-export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/bluememo
-./mvnw spring-boot:run
-```
+Start PostgreSQL and create the target database first. Then configure the datasource, JWT secret, and `local` profile.
 
 ### Windows PowerShell
 
 ```powershell
 cd bluememo
-$env:POSTGRES_DB = "bluememo"
-$env:POSTGRES_USER = "bluememo_user"
-$env:POSTGRES_PASSWORD = "replace_with_a_strong_password"
+
+$env:SPRING_DATASOURCE_URL = "jdbc:postgresql://localhost:5432/bluememo_db"
+$env:SPRING_DATASOURCE_USERNAME = "app_user"
+$env:SPRING_DATASOURCE_PASSWORD = "replace_with_a_strong_password"
 $env:JWT_SECRET = "replace_with_a_base64_encoded_secret"
-$env:SPRING_DATASOURCE_URL = "jdbc:postgresql://localhost:5432/bluememo"
-.\mvnw.cmd spring-boot:run
+
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
 ```
 
-When run locally, the API uses port `8080` unless it is overridden.
+### Linux or macOS
+
+```bash
+cd bluememo
+
+export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/bluememo_db
+export SPRING_DATASOURCE_USERNAME=app_user
+export SPRING_DATASOURCE_PASSWORD=replace_with_a_strong_password
+export JWT_SECRET=replace_with_a_base64_encoded_secret
+
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+```
+
+When started directly, the API is available at `http://localhost:8080` unless `SERVER_PORT` overrides it.
+
+To run another environment, replace `local` with `dev`, `qa`, or `prod` and provide all variables required by that profile.
 
 ## Authentication
 
@@ -155,29 +190,29 @@ Registration and login return a JWT:
 }
 ```
 
-Send it to protected endpoints using the `Authorization` header:
+Send the token to protected endpoints:
 
 ```http
 Authorization: Bearer <JWT>
 ```
 
-Tokens expire after 15 minutes. `/auth/**`, Swagger/OpenAPI, and `/actuator/health` are public; all other endpoints require authentication.
+Tokens expire after 15 minutes by default. `/auth/**`, Swagger/OpenAPI, and `/actuator/health` are public. Every other endpoint requires authentication.
 
 ## API endpoints
 
-| Method | Endpoint | Authentication | Description |
-| --- | --- | --- | --- |
-| `POST` | `/auth/register` | No | Register a user and return a JWT |
-| `POST` | `/auth/login` | No | Authenticate a user and return a JWT |
-| `GET` | `/users/me` | Yes | Get the authenticated user's profile |
-| `PATCH` | `/users/me` | Yes | Partially update the authenticated user's profile |
-| `DELETE` | `/users/me` | Yes | Delete the authenticated user and their to-do items |
-| `POST` | `/todos` | Yes | Create a to-do item |
-| `GET` | `/todos` | Yes | Get the authenticated user's paginated to-do items |
-| `GET` | `/todos/{todoId}` | Yes | Get one owned to-do item |
-| `PUT` | `/todos/{todoId}` | Yes | Replace the title and description of an owned item |
-| `PATCH` | `/todos/{todoId}?status={status}` | Yes | Update only the status of an owned item |
-| `DELETE` | `/todos/{todoId}` | Yes | Delete an owned to-do item |
+| Method | Endpoint | Auth | Success | Description |
+| --- | --- | --- | --- | --- |
+| `POST` | `/auth/register` | No | `201` | Register a user and return a JWT |
+| `POST` | `/auth/login` | No | `200` | Authenticate a user and return a JWT |
+| `GET` | `/users/me` | Yes | `200` | Get the authenticated user's profile |
+| `PATCH` | `/users/me` | Yes | `200` | Partially update the authenticated user's profile |
+| `DELETE` | `/users/me` | Yes | `204` | Delete the user and their to-do items |
+| `POST` | `/todos` | Yes | `201` | Create a to-do item |
+| `GET` | `/todos` | Yes | `200` | List the user's to-do items |
+| `GET` | `/todos/{todoId}` | Yes | `200` | Get one owned to-do item |
+| `PUT` | `/todos/{todoId}` | Yes | `200` | Replace an owned item's title and description |
+| `PATCH` | `/todos/{todoId}?status={status}` | Yes | `200` | Update an owned item's status |
+| `DELETE` | `/todos/{todoId}` | Yes | `204` | Delete an owned to-do item |
 
 ### List query parameters
 
@@ -191,15 +226,11 @@ Tokens expire after 15 minutes. `/auth/**`, Swagger/OpenAPI, and `/actuator/heal
 | `page` | `0` | Zero-based page number |
 | `size` | `10` | Number of items per page |
 
-Example:
+The paginated response contains `content`, `page`, `size`, `numberOfElements`, and `totalElements`.
 
-```http
-GET /todos?status=IN_PROGRESS&sortBy=updatedAt&direction=asc&page=0&size=10
-```
+## Request examples
 
-## Example requests
-
-The examples below assume the Docker setup at `http://localhost:8000`.
+The following examples use the Docker URL, `http://localhost:8000`.
 
 ### Register
 
@@ -231,8 +262,8 @@ curl -X POST http://localhost:8000/todos \
   -H "Authorization: Bearer <JWT>" \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Finish BlueMemo README",
-    "description": "Document setup and API usage"
+    "title": "Finish BlueMemo",
+    "description": "Review the API documentation"
   }'
 ```
 
@@ -241,23 +272,25 @@ New items are created with the `PENDING` status.
 ### List to-do items
 
 ```bash
-curl "http://localhost:8000/todos?status=PENDING&sortBy=createdAt&direction=desc&page=0&size=10" \
+curl "http://localhost:8000/todos?status=IN_PROGRESS&sortBy=updatedAt&direction=asc&page=0&size=10" \
   -H "Authorization: Bearer <JWT>"
 ```
 
-### Update title and description
+### Update a to-do item
+
+Both `title` and `description` are required by this endpoint.
 
 ```bash
 curl -X PUT http://localhost:8000/todos/<TODO_ID> \
   -H "Authorization: Bearer <JWT>" \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Finish and review BlueMemo README",
-    "description": "Verify every documented command"
+    "title": "Finish and review BlueMemo",
+    "description": "Verify the documented setup"
   }'
 ```
 
-### Update status
+### Update a to-do status
 
 ```bash
 curl -X PATCH "http://localhost:8000/todos/<TODO_ID>?status=COMPLETED" \
@@ -266,7 +299,7 @@ curl -X PATCH "http://localhost:8000/todos/<TODO_ID>?status=COMPLETED" \
 
 ### Update the current user
 
-The current password is required to authorize a profile update. All other fields are optional.
+`password` is the current password and is required to authorize the operation. The remaining fields are optional; use `newPassword` to change the password.
 
 ```bash
 curl -X PATCH http://localhost:8000/users/me \
@@ -276,16 +309,28 @@ curl -X PATCH http://localhost:8000/users/me \
     "name": "John Smith",
     "phone": "5512345678",
     "birthdate": "1995-08-20",
-    "password": "password123"
+    "password": "password123",
+    "newPassword": "newPassword123"
+  }'
+```
+
+### Delete the current user
+
+```bash
+curl -X DELETE http://localhost:8000/users/me \
+  -H "Authorization: Bearer <JWT>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "password": "newPassword123"
   }'
 ```
 
 ## Validation and errors
 
-The API uses standard HTTP status codes, including:
+The API uses standard HTTP status codes:
 
-- `400 Bad Request` for invalid fields, pagination, sorting, or status values
-- `401 Unauthorized` for missing, invalid, or expired authentication and invalid credentials
+- `400 Bad Request` for invalid request fields, UUIDs, pagination, sorting, or status values
+- `401 Unauthorized` for invalid credentials or missing, invalid, or expired authentication
 - `403 Forbidden` for denied access
 - `404 Not Found` for missing users or to-do items
 - `409 Conflict` for duplicate emails, phone numbers, or to-do titles
@@ -303,32 +348,44 @@ Errors follow this structure:
 
 ## Tests and coverage
 
-Run the test suite from `bluememo/`:
+Run the complete test suite from `bluememo/`.
 
-```bash
-./mvnw clean test
-```
-
-On Windows PowerShell:
+### Windows PowerShell
 
 ```powershell
 .\mvnw.cmd clean test
 ```
 
-The current suite contains 52 tests covering authentication, user operations, to-do operations, JWT behavior, and application startup.
+### Linux or macOS
 
-After the tests finish, open the JaCoCo report at:
+```bash
+./mvnw clean test
+```
+
+The current suite contains 52 tests covering authentication, user operations, to-do operations, JWT behavior, and application startup. The application context test uses the `test` profile with an in-memory H2 database.
+
+After the tests finish, open the JaCoCo report:
 
 ```text
 bluememo/target/site/jacoco/index.html
 ```
 
-## Build
+## Build and run the JAR
+
+### Windows PowerShell
+
+```powershell
+cd bluememo
+.\mvnw.cmd clean package
+java -jar target/bluememo-0.0.1-SNAPSHOT.jar --spring.profiles.active=local
+```
+
+### Linux or macOS
 
 ```bash
 cd bluememo
 ./mvnw clean package
-java -jar target/bluememo-0.0.1-SNAPSHOT.jar
+java -jar target/bluememo-0.0.1-SNAPSHOT.jar --spring.profiles.active=local
 ```
 
-The packaged application still requires the database and JWT environment variables described above.
+The packaged application requires the same datasource and JWT environment variables described above.
