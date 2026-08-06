@@ -7,3 +7,6 @@
 
 # Local agent configuration
 .agents/
+
+# Environment variables
+.env
