@@ -2,7 +2,9 @@ package com.bluedigi.bluememo.shared.infrastructure.security;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.UUID;
 
@@ -116,7 +118,7 @@ public class JwtServiceTest {
 
         boolean isValid = jwtService.isTokenValid(token, userDetails);
 
-        assertEquals(true, isValid);
+        assertTrue(isValid);
     }
 
     @Test
@@ -135,7 +137,7 @@ public class JwtServiceTest {
 
         boolean isValid = jwtService.isTokenValid(null, userDetails);
 
-        assertEquals(false, isValid);
+        assertFalse(isValid);
     }
 
     @Test
@@ -159,7 +161,7 @@ public class JwtServiceTest {
 
         boolean isValid = jwtService.isTokenValid(token, userDetails);
 
-        assertEquals(false, isValid);
+        assertFalse(isValid);
     }
 
     @Test
@@ -171,7 +173,7 @@ public class JwtServiceTest {
         savedUser.setName(NAME);
 
         var userDetails = org.springframework.security.core.userdetails.User.builder()
-                .username(userId.toString() + "bad")
+                .username(userId + "bad")
                 .password("12345678")
                 .roles("USER")
                 .build();
@@ -180,7 +182,36 @@ public class JwtServiceTest {
 
         boolean isValid = jwtService.isTokenValid(token, userDetails);
 
-        assertEquals(false, isValid);
+        assertFalse(isValid);
+    }
+
+    @Test
+    void isTokenInvalidExpired() {
+        UUID userId = UUID.randomUUID();
+        User savedUser = new User();
+        savedUser.setId(userId);
+        savedUser.setEmail(EMAIL);
+        savedUser.setName(NAME);
+        var userDetails = org.springframework.security.core.userdetails.User.builder()
+                .username(userId.toString())
+                .password("12345678")
+                .roles("USER")
+                .build();
+        // Set expiration to 1 second for testing
+        ReflectionTestUtils.setField(
+                jwtService,
+                "jwtExpirationMs",
+                1L
+        );
+        String token = jwtService.generateToken(savedUser);
+        // Wait for the token to expire
+        try {
+                Thread.sleep(15L);
+        } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+        }
+        boolean isValid = jwtService.isTokenValid(token, userDetails);
+        assertFalse(isValid);
     }
 
     private SecretKey getSigningKey() {
