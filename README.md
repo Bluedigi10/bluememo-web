@@ -108,7 +108,6 @@ The `.env` file is ignored by Git and excluded from the Docker build context. Do
 | Profile | Database | Schema strategy | Intended use |
 | --- | --- | --- | --- |
 | `local` | PostgreSQL with local defaults or environment overrides | `update` | Local development and Docker Compose |
-| `dev` | PostgreSQL configured through environment variables | `update` | Shared development environment |
 | `qa` | PostgreSQL configured through environment variables | `validate` | Quality assurance |
 | `prod` | PostgreSQL configured through environment variables | `validate` | Production |
 | `test` | In-memory H2 in PostgreSQL compatibility mode | `create-drop` | Automated tests |
@@ -178,7 +177,7 @@ export JWT_SECRET=replace_with_a_base64_encoded_secret
 
 When started directly, the API is available at `http://localhost:8080` unless `SERVER_PORT` overrides it.
 
-To run another environment, replace `local` with `dev`, `qa`, or `prod` and provide all variables required by that profile.
+To run another environment, replace `local` with `qa`, or `prod` and provide all variables required by that profile.
 
 ## Authentication
 
