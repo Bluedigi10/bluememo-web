@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: bluememo
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+          cache-dependency-path: |
+            bluememo/pom.xml
+            bluememo/.mvn/wrapper/maven-wrapper.properties
+
+      - name: Build and run tests
+        run: ./mvnw --batch-mode --no-transfer-progress clean verify
+
+      - name: Upload CI results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bluememo-ci-results
+          path: |
+            bluememo/target/*.jar
+            bluememo/target/surefire-reports/
+            bluememo/target/site/jacoco/
+          if-no-files-found: warn
+          retention-days: 7
