@@ -3,9 +3,10 @@ import { CheckSquare, Eye, EyeOff } from "lucide-react";
 
 interface LoginPageProps {
   onLogin: (user: { name: string; email: string }) => void;
+  onGoToRegister: () => void;
 }
 
-export function LoginPage({ onLogin }: LoginPageProps) {
+export function LoginPage({ onLogin, onGoToRegister }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -95,8 +96,14 @@ export function LoginPage({ onLogin }: LoginPageProps) {
             </button>
           </form>
 
-          <p className="text-xs text-[#9ca3af] text-center mt-5">
-            Usa cualquier correo y contraseña para entrar
+          <p className="text-sm text-[#6b7280] text-center mt-5">
+            ¿No tienes cuenta?{" "}
+            <button
+              onClick={onGoToRegister}
+              className="text-[#2563EB] hover:underline"
+            >
+              Regístrate
+            </button>
           </p>
         </div>
       </div>
