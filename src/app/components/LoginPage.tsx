@@ -1,5 +1,10 @@
 import { useState } from "react";
 import { CheckSquare, Eye, EyeOff } from "lucide-react";
+import { api, ApiError } from "../../lib/api";
+
+type LoginResponse = {
+  token: string;
+};
 
 interface LoginPageProps {
   onLogin: (user: { name: string; email: string }) => void;
@@ -13,9 +18,8 @@ export function LoginPage({ onLogin, onGoToRegister }: LoginPageProps) {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
 
     if (!email.trim() || !password.trim()) {
       setError("Por favor completa todos los campos.");
@@ -28,12 +32,40 @@ export function LoginPage({ onLogin, onGoToRegister }: LoginPageProps) {
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      const name = email.split("@")[0].replace(/[._]/g, " ");
-      const formatted = name.charAt(0).toUpperCase() + name.slice(1);
-      onLogin({ name: formatted, email });
+
+    try {
+      const response = await api<LoginResponse>("/auth/login", {
+        method: "POST",
+        withAuth: false,
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+        }),
+      });
+    
+      localStorage.setItem("token", response.token);
+    
+      const name = email
+        .split("@")[0]
+        .replace(/[._-]/g, " ");
+    
+      const formattedName =
+        name.charAt(0).toUpperCase() + name.slice(1);
+    
+      onLogin({
+        name: formattedName,
+        email,
+      });
+    } catch (caughtError: unknown) {
+      const message =
+        caughtError instanceof ApiError && caughtError.status === 401
+          ? "El correo o la contraseña son incorrectos."
+          : "No fue posible iniciar sesión. Inténtalo nuevamente.";
+        
+      setError(message);
+    } finally {
       setIsLoading(false);
-    }, 600);
+    }
   };
 
   return (
@@ -54,7 +86,7 @@ export function LoginPage({ onLogin, onGoToRegister }: LoginPageProps) {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {setEmail(e.target.value); setError("")}}
                 placeholder="tu@correo.com"
                 className="w-full px-3.5 py-2.5 rounded-lg border border-[#e5e7eb] bg-[#f9fafb] text-[#1a1a2e] placeholder:text-[#9ca3af] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all text-sm"
               />
@@ -66,7 +98,7 @@ export function LoginPage({ onLogin, onGoToRegister }: LoginPageProps) {
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {setPassword(e.target.value); setError("")}}
                   placeholder="••••••••"
                   className="w-full px-3.5 py-2.5 pr-10 rounded-lg border border-[#e5e7eb] bg-[#f9fafb] text-[#1a1a2e] placeholder:text-[#9ca3af] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all text-sm"
                 />

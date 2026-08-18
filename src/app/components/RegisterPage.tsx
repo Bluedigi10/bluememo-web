@@ -1,5 +1,10 @@
 import { useState } from "react";
 import { CheckSquare, Eye, EyeOff } from "lucide-react";
+import { api, ApiError } from "../../lib/api";
+
+type LoginResponse = {
+  token: string;
+};
 
 interface RegisterPageProps {
   onRegister: (user: { name: string; email: string }) => void;
@@ -33,7 +38,7 @@ export function RegisterPage({ onRegister, onGoToLogin }: RegisterPageProps) {
     return e;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) {
@@ -42,10 +47,51 @@ export function RegisterPage({ onRegister, onGoToLogin }: RegisterPageProps) {
     }
     setErrors({});
     setIsLoading(true);
-    setTimeout(() => {
-      onRegister({ name: name.trim(), email: email.trim() });
-      setIsLoading(false);
-    }, 700);
+    try {
+          const response = await api<LoginResponse>("/auth/register", {
+            method: "POST",
+            withAuth: false,
+            body: JSON.stringify({
+              name: name.trim(),
+              email: email.trim(),
+              password,
+            }),
+          });
+        
+          localStorage.setItem("token", response.token);
+        
+          onRegister({
+            name: name.trim(),
+            email: email.trim(),
+          });
+        } catch (caughtError: unknown) {
+          if (caughtError instanceof ApiError) {
+            switch (caughtError.status) {
+              case 400:
+                setErrors({
+                  general: "Revisa que los datos ingresados sean válidos.",
+                });
+                break;
+              
+              case 409:
+                setErrors({
+                  email: "Ya existe una cuenta registrada con este correo.",
+                });
+                break;
+              
+              default:
+                setErrors({
+                  general: "No fue posible crear la cuenta. Inténtalo nuevamente.",
+                });
+            }
+          } else {
+            setErrors({
+              general: "No fue posible crear la cuenta. Inténtalo nuevamente.",
+            });
+          }
+        } finally {
+          setIsLoading(false);
+        }
   };
 
   const clearError = (field: string) => {
@@ -171,6 +217,12 @@ export function RegisterPage({ onRegister, onGoToLogin }: RegisterPageProps) {
               </div>
               {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword}</p>}
             </div>
+
+            {errors.general && (
+              <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">
+                {errors.general}
+              </p>
+            )}
 
             <button
               type="submit"
